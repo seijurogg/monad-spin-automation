@@ -1,4 +1,4 @@
-Monad Spin Bot is an advanced automation script built with Python and Playwright that interacts with the Monad Spin MiniApp on farcaster.xyz
+Monad Spin Bot is an advanced automation script built with Python and Playwright that interacts with the Monad Spin MiniApp https://farcaster.xyz/miniapps/TLIZwXHJazk2/monad-spin on farcaster.xyz
 .
 It automatically navigates the app, performs spins, tracks results, and confirms wallet transactions — with colorful logs and safe shutdown handling.
 
