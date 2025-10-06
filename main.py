@@ -596,7 +596,7 @@ async def main() -> None:
             log_success("Browser launched successfully")
             
             try:
-                # Navigate to Monad Spin
+                # Navigate to Monad Spin (first time)
                 frame = await navigate_to_monad_spin(page, shutdown_event)
                 
                 if frame is None or shutdown_event.is_set():
@@ -609,27 +609,46 @@ async def main() -> None:
                 if shutdown_event.is_set():
                     return
                 
-                # Close modal
+                # Parse remaining spins (do this BEFORE closing modal)
+                total_spins = await parse_remaining_spins(frame)
+                
+                if shutdown_event.is_set():
+                    return
+                
+                # Now close the modal to go back to main page
+                log_step("Closing modal to return to main page...")
                 await close_modal(page, shutdown_event)
                 
                 if shutdown_event.is_set():
-                    log_warning("Shutdown requested before spin cycle")
+                    log_warning("Shutdown requested after closing modal")
                     return
                 
-                # Re-open Monad Spin
-                log_step("Re-opening Monad Spin...")
-                frame = await navigate_to_monad_spin(page, shutdown_event)
+                # Wait a bit for page to settle after closing modal
+                await page.wait_for_timeout(2000)
+                log_success("Returned to main Farcaster page")
                 
-                if frame is None or shutdown_event.is_set():
-                    return
-                    
-                await switch_to_monad_testnet(frame, shutdown_event)
+                # Now re-open Monad Spin for actual spinning
+                log_step("Re-opening Monad Spin for spinning...")
+                
+                # Click on Monad Spin again (don't navigate from scratch)
+                await page.wait_for_selector('img[alt="Monad Spin"]', timeout=10000)
+                log_success("Monad Spin app found")
+                
+                await page.locator('text=Monad Spin').first.click()
+                await page.wait_for_timeout(10000)
+                log_success("Monad Spin launched again")
+                
+                # Wait for iframe
+                log_step("Waiting for iframe to load...")
+                await page.wait_for_selector('iframe[src="https://monadspin.xyz"]', timeout=20000)
+                frame = page.frame_locator('iframe[src="https://monadspin.xyz"]')
+                log_success("Iframe loaded")
                 
                 if shutdown_event.is_set():
                     return
                 
-                # Parse remaining spins
-                total_spins = await parse_remaining_spins(frame)
+                # Switch to testnet again if needed
+                await switch_to_monad_testnet(frame, shutdown_event)
                 
                 if shutdown_event.is_set():
                     return
